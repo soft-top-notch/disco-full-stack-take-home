@@ -3,6 +3,7 @@ import { Profile } from "../../types";
 import { CeramicContext } from "../../contexts/";
 import { Box, Button, FormControl, TextField, Typography, CircularProgress } from "@mui/material";
 import { DidView } from "../DidView";
+import { ApiService } from "../../utils";
 
 export interface ProfileEditProps {
   onSaveComplete?(): void;
@@ -12,8 +13,11 @@ export const ProfileEdit: React.FC<ProfileEditProps> = (props) => {
   const { ensureConnected, userDid, userData, updateUserData, isConnected, isLoadingUserData } =
     React.useContext(CeramicContext);
   ensureConnected();
+
   const [loading, setLoading] = React.useState(false);
   const [profile, setProfile] = React.useState<Profile>({});
+
+  const api = React.useMemo(() => new ApiService(), []);
 
   React.useEffect(() => {
     setProfile(userData.profile || {});
@@ -22,7 +26,25 @@ export const ProfileEdit: React.FC<ProfileEditProps> = (props) => {
   async function saveProfile() {
     setLoading(true);
     await updateUserData({ profile });
-    setLoading(false);
+    if (userDid) {
+      api
+        .registerDid(userDid)
+        .then((r) => {
+          if (r) {
+            console.log("[ProfileEdit] Successfully registered DID in the backend");
+          } else {
+            console.log("[ProfileEdit] The Did is already registered in the backend or any other reasons");
+          }
+        })
+        .catch((err) => {
+          console.error(err);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else {
+      setLoading(false);
+    }
     props.onSaveComplete && props.onSaveComplete();
     console.log("[ProfileEdit] Successfully updated user data for DID", userDid);
   }
@@ -39,7 +61,7 @@ export const ProfileEdit: React.FC<ProfileEditProps> = (props) => {
     <Box>
       <Box mb={3}>
         <Typography variant="h4">Edit Profile</Typography>
-        <DidView did={userDid} typographyVariant="body2" copy dontTruncate />
+        {userDid && <DidView did={userDid} typographyVariant="body2" copy dontTruncate />}
       </Box>
 
       <FormControl fullWidth sx={{ marginBottom: 3 }}>

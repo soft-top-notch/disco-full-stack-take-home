@@ -3,6 +3,7 @@ export interface Profile {
   bio?: string;
   avatar?: string;
   banner?: string;
+  did?: string;
 }
 
 export interface AccountLinkage {

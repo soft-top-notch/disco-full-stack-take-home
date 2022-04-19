@@ -2,19 +2,28 @@ import * as React from "react";
 import { Box, CircularProgress } from "@mui/material";
 
 import { ProfileView } from "./ProfileView";
-import { ProfileLoader } from "./ProfileLoader";
 import { ApiService } from "../../utils/ApiService";
+import { Profile } from "../../types";
 
 export const ProfilesList: React.FC = (props) => {
   const [loading, setLoading] = React.useState(true);
+  const [profiles, setProfiles] = React.useState<Profile[]>([]);
 
   const api = React.useMemo(() => new ApiService(), []);
-  // @NOTE: Example api usage:
-  // console.log(await api.getProfileViaDid("did:3:kjzl6cwe1jw148uyox3goiyrwwe3aab8vatm3apxqisd351ww0dj6v5e3f61e8b"));
 
-  throw new Error(
-    "@TODO: Please implement me using ApiService and ProfileView or ProfileLoader! This component should display all of the profiles one after the other.",
-  );
+  React.useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const allProfiles = await api.getAllProfiles();
+        setProfiles(allProfiles);
+        console.log("[ProfilesList] Successfully fetched all profiles from the backend");
+      } catch (err) {
+        console.error(err);
+      }
+      setLoading(false);
+    })();
+  }, []);
 
   if (loading) {
     return (
@@ -24,9 +33,5 @@ export const ProfilesList: React.FC = (props) => {
     );
   }
 
-  return (
-    <Box>
-      Coming soon!
-    </Box>
-  );
+  return <Box>{profiles.map((p) => p.did && <ProfileView key={p.did} did={p.did} profile={p} />)}</Box>;
 };
